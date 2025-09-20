@@ -230,7 +230,6 @@ class FallbackImageGenerator:
                 "",
                 theme,
                 "",
-                "AutoHairTweets",
                 "@newhairstylesx"
             ]
             

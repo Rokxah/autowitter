@@ -72,7 +72,7 @@ class WeeklyScheduler:
                 theme = info['theme']
                 report_text += f"{day[:3]}: {theme['name']} {theme['emoji']}\n"
             
-            report_text += "\n#HaftalıkProgram #saçstili #AutoHairTweets"
+            report_text += "\n#HaftalıkProgram #hairstyle #Beauty #Stylish"
             
             # Raporu tweet olarak gönder
             success = hair_bot.twitter_client.post_tweet(report_text)
