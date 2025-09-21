@@ -13,7 +13,7 @@ import time
 import logging
 from datetime import datetime
 from src.bot.hair_bot import hair_bot
-from src.image_generator.unsplash_client import fallback_generator
+from src.image_generator.real_photo_client import real_photo_client
 from src.content_creator.weekly_planner import weekly_planner
 import uuid
 
@@ -42,10 +42,9 @@ def send_scheduled_tweet():
         content = hair_bot.generate_hair_content(use_ai=True)
         logger.info(f"📝 İçerik üretildi: {content['text'][:50]}...")
         
-        # Görsel oluştur
-        image_path = fallback_generator.create_text_image(
-            text=content['text'][:50] + "...",
-            style=content['style'],
+        # Gerçek saç fotoğrafı al
+        image_path = real_photo_client.get_random_hair_photo(
+            style_focus=content['style'],
             theme=content['theme']
         )
         

@@ -51,7 +51,7 @@ class WeeklyScheduler:
             today_theme = weekly_planner.get_today_theme()
             self.logger.info(f"Bugünün teması: {today_theme['name']} {today_theme['emoji']}")
             
-            # Tweet gönder (AI ile)
+            # Tweet gönder (AI ile, gerçek fotoğraflarla)
             success = hair_bot.post_hair_tweet(use_ai=True)
             
             if success:

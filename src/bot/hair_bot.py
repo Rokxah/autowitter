@@ -1,12 +1,12 @@
 import random
 import logging
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from src.api.twitter_client import twitter_client
 from src.config.settings import settings
 from src.content_creator.weekly_planner import weekly_planner
 from src.ai.gemini_client import gemini_client
-from src.image_generator.unsplash_client import fallback_generator
+from src.image_generator.real_photo_client import real_photo_client
 
 class HairStyleBot:
     """Saç stili paylaşım botu ana sınıfı"""
@@ -43,7 +43,7 @@ class HairStyleBot:
         """Twitter kimlik doğrulama"""
         return self.twitter_client.authenticate(access_token, access_token_secret)
     
-    def generate_hair_content(self, use_ai: bool = True) -> Dict[str, str]:
+    def generate_hair_content(self, use_ai: bool = True) -> Dict[str, Any]:
         """
         Saç stili içeriği üret
         
@@ -105,6 +105,21 @@ class HairStyleBot:
             # İçerik üret
             content = self.generate_hair_content(use_ai=use_ai)
             
+            # Eğer görsel yolu verilmemişse, gerçek saç fotoğrafı al
+            if not image_path:
+                style_focus = content.get('style', 'hairstyle')
+                theme = content.get('theme', 'general')
+                
+                image_path = real_photo_client.get_random_hair_photo(
+                    style_focus=style_focus,
+                    theme=theme
+                )
+                
+                if image_path:
+                    self.logger.info(f"Gerçek saç fotoğrafı alındı: {image_path}")
+                else:
+                    self.logger.warning("Gerçek fotoğraf alınamadı, sadece metin gönderilecek")
+            
             # Tweet gönder
             success = self.twitter_client.post_tweet(
                 text=content['text'],
@@ -122,7 +137,7 @@ class HairStyleBot:
             self.logger.error(f"Tweet gönderme hatası: {e}")
             return False
     
-    def get_bot_status(self) -> Dict:
+    def get_bot_status(self) -> Dict[str, Any]:
         """Bot durumu bilgilerini al"""
         try:
             user_info = self.twitter_client.get_user_info()
