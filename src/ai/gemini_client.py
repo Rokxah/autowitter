@@ -1,7 +1,8 @@
 import google.generativeai as genai
 import logging
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Any
 from src.config.settings import settings
+from src.api.trends_client import trends_client
 
 class GeminiClient:
     """Google Gemini AI istemcisi"""
@@ -25,7 +26,7 @@ class GeminiClient:
         except Exception as e:
             self.logger.error(f"Gemini yapılandırma hatası: {e}")
     
-    def generate_hair_content(self, theme: Dict, style_focus: str = None) -> Dict:
+    def generate_hair_content(self, theme: Dict[str, Any], style_focus: Optional[str] = None) -> Dict[str, Any]:
         """
         Saç stili içeriği üret
         
@@ -55,8 +56,12 @@ class GeminiClient:
             self.logger.error(f"İçerik üretme hatası: {e}")
             return self._get_fallback_content(theme)
     
-    def _create_content_prompt(self, theme: Dict, style_focus: str = None) -> str:
+    def _create_content_prompt(self, theme: Dict[str, Any], style_focus: Optional[str] = None) -> str:
         """İçerik üretimi için prompt oluştur"""
+        
+        # Dinamik hashtag'leri al
+        mixed_hashtags = trends_client.get_mixed_hashtags(base_count=3, trend_count=2)
+        hashtag_list = ', '.join(mixed_hashtags)
         
         base_prompt = f"""
         You are a professional hairstylist and social media influencer.
@@ -71,10 +76,9 @@ class GeminiClient:
         3. Should be engaging, natural, and authentic (like a real person)
         4. Should be informative about hairstyles
         5. Use appropriate emojis (but not too many)
-        6. Include 3-4 relevant hashtags from these: {', '.join(theme['hashtags'][:4])}
-        7. Add 1 trending hashtag from: #viral, #trending, #fyp, #inspo, #mood, #aesthetic, #vibes, #goals
-        8. Sound like a real hairstylist sharing genuine advice/inspiration
-        9. Avoid mentioning any bot names or automated systems
+        6. Include 3-5 hashtags from these (mix of hair-related and trending): {hashtag_list}
+        7. Sound like a real hairstylist sharing genuine advice/inspiration
+        8. Avoid mentioning any bot names or automated systems
         
         """
         
@@ -94,7 +98,7 @@ class GeminiClient:
         
         return base_prompt
     
-    def _process_generated_content(self, generated_text: str, theme: Dict) -> Dict:
+    def _process_generated_content(self, generated_text: str, theme: Dict[str, Any]) -> Dict[str, Any]:
         """Üretilen içeriği işle"""
         # Metni temizle
         clean_text = generated_text.strip()
@@ -113,7 +117,7 @@ class GeminiClient:
             'timestamp': None
         }
     
-    def _get_fallback_content(self, theme: Dict) -> Dict:
+    def _get_fallback_content(self, theme: Dict[str, Any]) -> Dict[str, Any]:
         """Hata durumunda yedek içerik - İngilizce"""
         fallback_texts = {
             'Short Hair Monday': f"Short hair takes courage! {theme['emoji']} Start the new week with a fresh new style!",
@@ -127,24 +131,21 @@ class GeminiClient:
         
         text = fallback_texts.get(theme['name'], f"{theme['concept']} {theme['emoji']}")
         
-        # Hashtag'leri karıştır - tema + trend
-        import random
-        theme_hashtags = theme['hashtags'][:3]
-        trend_hashtag = random.choice(settings.TRENDING_HASHTAGS)
-        all_hashtags = theme_hashtags + [trend_hashtag]
-        hashtags = ' '.join(all_hashtags)
+        # Dinamik hashtag'leri al
+        mixed_hashtags = trends_client.get_mixed_hashtags(base_count=3, trend_count=2)
+        hashtags = ' '.join(mixed_hashtags)
         
         return {
             'text': f"{text} {hashtags}",
             'theme': theme['name'],
             'concept': theme['concept'],
             'emoji': theme['emoji'],
-            'hashtags': all_hashtags,
+            'hashtags': mixed_hashtags,
             'generated_by': 'fallback',
             'timestamp': None
         }
     
-    def generate_image_prompt(self, theme: Dict, style: str) -> str:
+    def generate_image_prompt(self, theme: Dict[str, Any], style: str) -> str:
         """Görsel üretimi için prompt oluştur"""
         try:
             prompt = f"""
