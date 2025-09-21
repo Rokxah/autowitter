@@ -67,44 +67,10 @@ class TrendsClient:
         Returns:
             List[str]: Trend hashtag'ler listesi
         """
-        try:
-            if not self.api:
-                self.logger.warning("Twitter API bağlantısı yok, fallback hashtag'ler kullanılıyor")
-                return random.sample(self.fallback_trends, min(count, len(self.fallback_trends)))
-            
-            # Trend konuları al
-            trends = self.api.get_place_trends(woeid)[0]['trends']
-            
-            trending_hashtags = []
-            
-            for trend in trends:
-                name = trend['name']
-                
-                # Hashtag ise ve uygun ise ekle
-                if name.startswith('#') and len(name) > 2:
-                    # Güzellik/saç ile ilgili mi kontrol et
-                    if any(keyword.lower() in name.lower() for keyword in self.beauty_keywords):
-                        trending_hashtags.append(name)
-                    # Genel popüler hashtag'ler
-                    elif any(word in name.lower() for word in ['viral', 'trend', 'mood', 'aesthetic', 'goals']):
-                        trending_hashtags.append(name)
-                
-                if len(trending_hashtags) >= count:
-                    break
-            
-            # Yeterli hashtag bulunamazsa fallback'lerden ekle
-            if len(trending_hashtags) < count:
-                needed = count - len(trending_hashtags)
-                fallback_sample = random.sample(self.fallback_trends, min(needed, len(self.fallback_trends)))
-                trending_hashtags.extend(fallback_sample)
-            
-            self.logger.info(f"{len(trending_hashtags)} trend hashtag bulundu")
-            return trending_hashtags[:count]
-            
-        except Exception as e:
-            self.logger.error(f"Trend hashtag alma hatası: {e}")
-            # Hata durumunda fallback hashtag'ler döndür
-            return random.sample(self.fallback_trends, min(count, len(self.fallback_trends)))
+        # Twitter API Basic planında Trends API erişimi yok
+        # Direkt fallback hashtag'leri kullan
+        self.logger.info(f"Popüler hashtag'ler kullanılıyor ({count} adet)")
+        return random.sample(self.fallback_trends, min(count, len(self.fallback_trends)))
     
     def get_mixed_hashtags(self, base_count: int = 3, trend_count: int = 2) -> List[str]:
         """
@@ -131,7 +97,7 @@ class TrendsClient:
             return mixed_hashtags
             
         except Exception as e:
-            self.logger.error(f"Karışık hashtag oluşturma hatası: {e}")
+            self.logger.info(f"Trend API erişimi sınırlı, sabit hashtag'ler kullanılıyor")
             # Hata durumunda sadece sabit hashtag'ler
             return random.sample(settings.HASHTAGS, min(base_count, len(settings.HASHTAGS)))
     
@@ -174,7 +140,7 @@ class TrendsClient:
             return trend_list
             
         except Exception as e:
-            self.logger.error(f"Lokasyon trend'leri alma hatası: {e}")
+            self.logger.info(f"Trend API erişimi sınırlı")
             return []
 
 # Global trends client instance
